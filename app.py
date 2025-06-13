@@ -5,7 +5,7 @@ from functools import reduce
 from operator import mul
 import pandas as pd
 
-# 필터링할 고정 숫자 집합 (2,5,11,17,23,29,41)
+# 필터링할 고정 숫자 집합 (52,55,61,67,73,79,91)
 FILTER_NUMBERS = {52, 55, 61, 67, 73, 79, 91}
 
 def check_password():
@@ -46,10 +46,10 @@ if check_password():
                 for col in inputs
             ]))
             
-            # 필터링 조건: 필터 숫자 2개 이상 포함
+            # 🔽 필터링 조건 변경 (2개 이상 → 1개 이하)
             filter_count = sum(1 for num in combo if num in FILTER_NUMBERS)
             
-            if filter_count >= 2 and combo not in valid_combos:
+            if filter_count <= 1 and combo not in valid_combos:  # 조건 변경
                 valid_combos.append(combo)
                 
             attempt += 1
@@ -57,7 +57,6 @@ if check_password():
         return valid_combos
 
     st.title("🔢 조건부 로또 조합 생성기")
-    st.markdown("**조건**: 2,5,11,17,23,29,41 중 2개 이상 포함된 조합만 생성")
 
     # 입력 칸
     cols = st.columns(6)
