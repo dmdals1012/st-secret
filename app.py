@@ -17,7 +17,7 @@ def check_password():
         password = st.text_input("비밀번호를 입력하세요", type="password")
         
         if st.button("로그인", use_container_width=True):
-            if password == "1234":
+            if password == 1234:
                 st.session_state.authenticated = True
                 st.session_state.selections = []
                 st.rerun()
