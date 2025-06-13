@@ -91,7 +91,7 @@ if check_password():
         # 표 형식 출력
         df = pd.DataFrame(
             st.session_state.selections,
-            columns=[f"번호{i+1}" for i in range(6)]
+            columns=[f"row{i+1}" for i in range(6)]
         )
         st.dataframe(df.style.format("{:02d}"), height=400)
 
