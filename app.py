@@ -38,7 +38,8 @@ if check_password():
 
     def generate_unique_numbers(all_combos, count):
         indices = np.random.choice(len(all_combos), size=count, replace=False)
-        return [all_combos[i] for i in indices]
+        # 각 조합 내 숫자 오름차순 정렬
+        return [tuple(sorted(all_combos[i])) for i in indices]
 
     st.title("🔢 중복 없는 로또 조합 생성기")
 
