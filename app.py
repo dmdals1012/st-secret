@@ -5,7 +5,9 @@ from functools import reduce
 from operator import mul
 import pandas as pd
 
-# 비밀번호 검증 함수
+# 필터링할 고정 숫자 집합 (2,5,11,17,23,29,41)
+FILTER_NUMBERS = {2, 5, 11, 17, 23, 29, 41}
+
 def check_password():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -17,14 +19,13 @@ def check_password():
         if st.button("로그인", use_container_width=True):
             if password == "@rlawnstlr0719":
                 st.session_state.authenticated = True
-                st.session_state.selections = []  # 기존 데이터 초기화
+                st.session_state.selections = []
                 st.rerun()
             else:
                 st.error("❌ 잘못된 비밀번호입니다. 다시 시도해주세요.")
         return False
     return True
 
-# 메인 앱 실행
 if check_password():
     if 'selections' not in st.session_state:
         st.session_state.selections = []
@@ -33,17 +34,32 @@ if check_password():
         lengths = [len(arr) for arr in inputs]
         return reduce(mul, lengths, 1) if 0 not in lengths else 0
 
-    def get_all_combinations(inputs):
-        return list(itertools.product(*inputs))
+    def generate_valid_combinations(inputs, count):
+        valid_combos = []
+        attempt = 0
+        max_attempts = count * 10  # 무한 루프 방지
+        
+        while len(valid_combos) < count and attempt < max_attempts:
+            # 조합 생성
+            combo = tuple(sorted([
+                np.random.choice(col) 
+                for col in inputs
+            ]))
+            
+            # 필터링 조건: 필터 숫자 2개 이상 포함
+            filter_count = sum(1 for num in combo if num in FILTER_NUMBERS)
+            
+            if filter_count >= 2 and combo not in valid_combos:
+                valid_combos.append(combo)
+                
+            attempt += 1
+            
+        return valid_combos
 
-    def generate_unique_numbers(all_combos, count):
-        indices = np.random.choice(len(all_combos), size=count, replace=False)
-        # 각 조합 내 숫자 오름차순 정렬
-        return [tuple(sorted(all_combos[i])) for i in indices]
+    st.title("🔢 조건부 로또 조합 생성기")
+    st.markdown("**조건**: 2,5,11,17,23,29,41 중 2개 이상 포함된 조합만 생성")
 
-    st.title("🔢 중복 없는 로또 조합 생성기")
-
-    # 6개 칸 입력 위젯
+    # 입력 칸
     cols = st.columns(6)
     inputs = []
     for i in range(6):
@@ -59,53 +75,41 @@ if check_password():
                 numbers = []
             inputs.append(numbers)
 
-    # 최대 조합 수 계산
     max_combinations = get_max_combinations(inputs)
-    st.info(f"🎲 현재 입력된 숫자들로 만들 수 있는 최대 조합 수: **{max_combinations:,}개**")
+    st.info(f"🎲 최대 조합 수: **{max_combinations:,}개** (필터 적용 전)")
 
-    # 생성 옵션
-    with st.expander("⚙️ 생성 설정", expanded=True):
-        count = st.number_input(
-            "생성할 조합 수", 
-            min_value=1, 
-            max_value=min(10000, max_combinations) if max_combinations else 1,
-            value=min(5, max_combinations) if max_combinations else 1
-        )
+    count = st.number_input(
+        "생성할 조합 수", 
+        min_value=1, 
+        max_value=10000,
+        value=5
+    )
 
-    # 생성 버튼
     if st.button("🎲 번호 생성하기", use_container_width=True):
         if max_combinations == 0:
-            st.error("❗모든 칸에 최소 1개 이상의 숫자를 입력해주세요!")
-        elif count > max_combinations:
-            st.error(f"❗최대 생성 가능 조합 수({max_combinations})를 초과했습니다!")
+            st.error("❗모든 칸에 숫자를 입력해주세요!")
         else:
-            all_combos = get_all_combinations(inputs)
-            selected_combos = generate_unique_numbers(all_combos, count)
-            st.session_state.selections = selected_combos  # 새로 생성한 조합만 저장
-            st.success(f"✅ {count}개 조합 생성 완료!")
+            valid_combos = generate_valid_combinations(inputs, count)
+            st.session_state.selections = valid_combos
+            st.success(f"✅ {len(valid_combos)}개 유효 조합 생성")
 
-    # 결과 출력
     if st.session_state.selections:
-        st.subheader("📜 생성 결과")
-        
-        # 표 형식 출력
         df = pd.DataFrame(
             st.session_state.selections,
-            columns=[f"row{i+1}" for i in range(6)]
+            columns=[f"번호{i+1}" for i in range(6)]
         )
+        
         st.dataframe(df.style.format("{:02d}"), height=400)
-
-        # CSV 다운로드
+        
         csv = df.to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="📥 CSV로 저장",
+            label="📥 CSV 다운로드",
             data=csv,
-            file_name="lotto_results.csv",
+            file_name="filtered_lotto.csv",
             mime="text/csv",
             use_container_width=True
         )
 
-    # 로그아웃 버튼
     if st.button("🚪 로그아웃", use_container_width=True, type="secondary"):
         st.session_state.authenticated = False
         st.rerun()
