@@ -6,7 +6,7 @@ from operator import mul
 import pandas as pd
 
 # 필터링할 고정 숫자 집합 (2,5,11,17,23,29,41)
-FILTER_NUMBERS = {2, 5, 11, 17, 23, 29, 41}
+FILTER_NUMBERS = {52, 55, 61, 67, 73, 79, 91}
 
 def check_password():
     if 'authenticated' not in st.session_state:
