@@ -1,6 +1,5 @@
 import streamlit as st
 import numpy as np
-import itertools
 from functools import reduce
 from operator import mul
 import pandas as pd
@@ -19,7 +18,8 @@ def check_password():
         if st.button("로그인", use_container_width=True):
             if password == 1234:
                 st.session_state.authenticated = True
-                st.session_state.selections = []
+                st.session_state.filtered_selections = []
+                st.session_state.unfiltered_selections = []
                 st.rerun()
             else:
                 st.error("❌ 잘못된 비밀번호입니다. 다시 시도해주세요.")
@@ -27,38 +27,13 @@ def check_password():
     return True
 
 if check_password():
-    if 'selections' not in st.session_state:
-        st.session_state.selections = []
+    # 반드시 세션 상태 변수 초기화!
+    if 'filtered_selections' not in st.session_state:
+        st.session_state.filtered_selections = []
+    if 'unfiltered_selections' not in st.session_state:
+        st.session_state.unfiltered_selections = []
 
-    def get_max_combinations(inputs):
-        lengths = [len(arr) for arr in inputs]
-        return reduce(mul, lengths, 1) if 0 not in lengths else 0
-
-    def generate_valid_combinations(inputs, count):
-        valid_combos = []
-        attempt = 0
-        max_attempts = count * 10  # 무한 루프 방지
-        
-        while len(valid_combos) < count and attempt < max_attempts:
-            # 조합 생성
-            combo = tuple(sorted([
-                np.random.choice(col) 
-                for col in inputs
-            ]))
-            
-            # 🔽 필터링 조건 변경 (2개 이상 → 1개 이하)
-            filter_count = sum(1 for num in combo if num in FILTER_NUMBERS)
-            
-            if filter_count <= 1 and combo not in valid_combos:  # 조건 변경
-                valid_combos.append(combo)
-                
-            attempt += 1
-            
-        return valid_combos
-
-    st.title("🔢 조건부 로또 조합 생성기")
-
-    # 입력 칸
+    # 공통 입력 칸
     cols = st.columns(6)
     inputs = []
     for i in range(6):
@@ -74,41 +49,105 @@ if check_password():
                 numbers = []
             inputs.append(numbers)
 
-    max_combinations = get_max_combinations(inputs)
-    st.info(f"🎲 최대 조합 수: **{max_combinations:,}개** (필터 적용 전)")
-
-    count = st.number_input(
-        "생성할 조합 수", 
-        min_value=1, 
-        max_value=10000,
-        value=5
-    )
-
-    if st.button("🎲 번호 생성하기", use_container_width=True):
-        if max_combinations == 0:
-            st.error("❗모든 칸에 숫자를 입력해주세요!")
-        else:
-            valid_combos = generate_valid_combinations(inputs, count)
-            st.session_state.selections = valid_combos
-            st.success(f"✅ {len(valid_combos)}개 유효 조합 생성")
-
-    if st.session_state.selections:
-        df = pd.DataFrame(
-            st.session_state.selections,
-            columns=[f"번호{i+1}" for i in range(6)]
-        )
+    max_combinations = reduce(mul, [len(col) for col in inputs if len(col) > 0], 1) if all(len(col) > 0 for col in inputs) else 0
+    
+    # 탭 생성
+    tab1, tab2 = st.tabs(["🔍 필터 적용 버전", "🎲 일반 버전"])
+    
+    # 필터 적용 탭
+    with tab1:
         
-        st.dataframe(df.style.format("{:02d}"), height=400)
-        
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 CSV 다운로드",
-            data=csv,
-            file_name="filtered_lotto.csv",
-            mime="text/csv",
-            use_container_width=True
+        count_filtered = st.number_input(
+            "생성할 조합 수 (필터)", 
+            min_value=1, 
+            max_value=10000,
+            value=5,
+            key="count_filtered"
         )
 
+        if st.button("🎲 필터 적용 생성", key="btn_filtered", use_container_width=True):
+            if max_combinations == 0:
+                st.error("❗모든 칸에 숫자를 입력해주세요!")
+            else:
+                valid_combos = []
+                attempt = 0
+                max_attempts = count_filtered * 10
+                
+                while len(valid_combos) < count_filtered and attempt < max_attempts:
+                    combo = tuple(sorted([np.random.choice(col) for col in inputs]))
+                    filter_count = sum(1 for num in combo if num in FILTER_NUMBERS)
+                    
+                    if filter_count <= 1 and combo not in valid_combos:
+                        valid_combos.append(combo)
+                    attempt += 1
+                
+                st.session_state.filtered_selections = valid_combos
+                st.success(f"✅ {len(valid_combos)}개 유효 조합 생성")
+
+        if st.session_state.filtered_selections:
+            df_filtered = pd.DataFrame(
+                st.session_state.filtered_selections,
+                columns=[f"번호{i+1}" for i in range(6)]
+            )
+            
+            st.dataframe(df_filtered.style.format("{:02d}"), height=400)
+            
+            csv_filtered = df_filtered.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 필터 데이터 다운로드",
+                data=csv_filtered,
+                file_name="filtered_lotto.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+    # 일반 버전 탭
+    with tab2:
+
+        
+        count_unfiltered = st.number_input(
+            "생성할 조합 수 (일반)", 
+            min_value=1, 
+            max_value=10000,
+            value=5,
+            key="count_unfiltered"
+        )
+
+        if st.button("🎲 일반 생성", key="btn_unfiltered", use_container_width=True):
+            if max_combinations == 0:
+                st.error("❗모든 칸에 숫자를 입력해주세요!")
+            else:
+                valid_combos = []
+                attempt = 0
+                max_attempts = count_unfiltered * 10
+                
+                while len(valid_combos) < count_unfiltered and attempt < max_attempts:
+                    combo = tuple(sorted([np.random.choice(col) for col in inputs]))
+                    if combo not in valid_combos:
+                        valid_combos.append(combo)
+                    attempt += 1
+                
+                st.session_state.unfiltered_selections = valid_combos
+                st.success(f"✅ {len(valid_combos)}개 조합 생성")
+
+        if st.session_state.unfiltered_selections:
+            df_unfiltered = pd.DataFrame(
+                st.session_state.unfiltered_selections,
+                columns=[f"번호{i+1}" for i in range(6)]
+            )
+            
+            st.dataframe(df_unfiltered.style.format("{:02d}"), height=400)
+            
+            csv_unfiltered = df_unfiltered.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 일반 데이터 다운로드",
+                data=csv_unfiltered,
+                file_name="unfiltered_lotto.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+    # 로그아웃 버튼 (공통)
     if st.button("🚪 로그아웃", use_container_width=True, type="secondary"):
         st.session_state.authenticated = False
         st.rerun()
