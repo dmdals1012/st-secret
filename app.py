@@ -14,7 +14,7 @@ def check_password():
         
     if not st.session_state.authenticated:
         st.title("🔒 접근 권한")
-        password = st.number_input("비밀번호를 입력하세요", type="password")
+        password = st.number_input("비밀번호를 입력하세요", format="%d")
         
         if st.button("로그인", use_container_width=True):
             if password == 1234:
