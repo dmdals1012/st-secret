@@ -32,6 +32,8 @@ if check_password():
         st.session_state.filtered_selections = []
     if 'unfiltered_selections' not in st.session_state:
         st.session_state.unfiltered_selections = []
+    
+    st.title("🎲 로또 조합 생성기")
 
     # 공통 입력 칸
     cols = st.columns(6)
@@ -109,7 +111,7 @@ if check_password():
             "생성할 조합 수 (일반)", 
             min_value=1, 
             max_value=10000,
-            value=5,
+            value=10,
             key="count_unfiltered"
         )
 
