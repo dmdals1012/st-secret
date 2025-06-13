@@ -61,7 +61,7 @@ if check_password():
             "생성할 조합 수 (필터)", 
             min_value=1, 
             max_value=10000,
-            value=5,
+            value=10,
             key="count_filtered"
         )
 
