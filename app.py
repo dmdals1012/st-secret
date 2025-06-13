@@ -14,10 +14,10 @@ def check_password():
         password = st.text_input("비밀번호를 입력하세요", type="password")
         
         if st.button("로그인", use_container_width=True):
-            if password == "0719":
+            if password == "@rlawnstlr0719":
                 st.session_state.authenticated = True
                 st.session_state.selections = []  # 기존 데이터 초기화
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("❌ 잘못된 비밀번호입니다. 다시 시도해주세요.")
         return False
