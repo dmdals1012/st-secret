@@ -3,6 +3,7 @@ import numpy as np
 import itertools
 from functools import reduce
 from operator import mul
+import pandas as pd
 
 # 비밀번호 검증 함수
 def check_password():
