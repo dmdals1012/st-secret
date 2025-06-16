@@ -109,7 +109,11 @@ if check_password():
                 columns=[f"번호{i+1}" for i in range(6)]
             )
 
-            st.dataframe(df_filtered.style.format("{:02d}"), height=400)
+            # 페이지네이션
+            page_size = 10000
+            total_pages = (len(df_filtered) - 1) // page_size + 1
+            page = st.number_input("페이지 번호", 1, total_pages, 1, key="page_filtered")
+            st.dataframe(df_filtered.iloc[(page-1)*page_size : page*page_size], height=400)
 
             csv_filtered = df_filtered.to_csv(index=False).encode('utf-8')
             st.download_button(
@@ -150,7 +154,11 @@ if check_password():
                 columns=[f"번호{i+1}" for i in range(6)]
             )
 
-            st.dataframe(df_unfiltered.style.format("{:02d}"), height=400)
+            # 페이지네이션
+            page_size = 10000
+            total_pages = (len(df_unfiltered) - 1) // page_size + 1
+            page = st.number_input("페이지 번호", 1, total_pages, 1, key="page_unfiltered")
+            st.dataframe(df_unfiltered.iloc[(page-1)*page_size : page*page_size], height=400)
 
             csv_unfiltered = df_unfiltered.to_csv(index=False).encode('utf-8')
             st.download_button(
