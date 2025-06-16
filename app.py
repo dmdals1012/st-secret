@@ -11,11 +11,11 @@ FILTER_NUMBERS = {52, 55, 61, 67, 73, 79, 91}
 def check_password():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
-
+        
     if not st.session_state.authenticated:
         st.title("🔒 접근 권한")
         password = st.number_input("비밀번호를 입력하세요", format="%d")
-
+        
         if st.button("로그인", use_container_width=True):
             if password == 1234:
                 st.session_state.authenticated = True
@@ -31,14 +31,14 @@ def calc_unique_combinations(inputs):
     """중복 없는 조합 수 계산 함수"""
     if not all(len(col) > 0 for col in inputs):
         return 0
-
+    
     all_combos = itertools.product(*inputs)
     unique_count = 0
-
+    
     for combo in all_combos:
         if len(set(combo)) == 6:
             unique_count += 1
-
+    
     return unique_count
 
 def calc_max_combinations(inputs):
@@ -51,7 +51,7 @@ if check_password():
         st.session_state.filtered_selections = []
     if 'unfiltered_selections' not in st.session_state:
         st.session_state.unfiltered_selections = []
-
+    
     st.title("🎲 로또 조합 생성기")
 
     # 공통 입력 칸
@@ -60,7 +60,7 @@ if check_password():
     for i in range(6):
         with cols[i]:
             input_str = st.text_input(
-                f"{i+1}번째 숫자",
+                f"{i+1}번째 숫자", 
                 placeholder="쉼표로 구분 (예: 1,5,10)",
                 key=f"col_{i}"
             )
@@ -82,13 +82,11 @@ if check_password():
         st.info(f"🎲 총 조합 수 (중복 허용): **{total_combinations:,}개**")
         st.info(f"🎲 중복 없는 조합 수: **{unique_combinations:,}개**")
 
-        max_value_filtered = unique_combinations if unique_combinations else 1
-        value_filtered = min(10, max_value_filtered)
         count_filtered = st.number_input(
-            "생성할 조합 수 (필터)",
+            "생성할 조합 수 (필터)", 
             min_value=1,
-            max_value=max_value_filtered,
-            value=value_filtered,
+            max_value=unique_combinations if unique_combinations else 1,
+            value=min(10, unique_combinations) if unique_combinations else 1,
             key="count_filtered"
         )
 
@@ -96,10 +94,13 @@ if check_password():
             if unique_combinations == 0:
                 st.error("❗모든 칸에 숫자를 입력해주세요!")
             else:
-                # 모든 중복 없는 조합을 미리 구해서 필터 적용
+                # 모든 조합 생성
                 all_combos = [tuple(sorted(combo)) for combo in itertools.product(*inputs) if len(set(combo)) == 6]
+                # 필터 적용
                 filtered_combos = [combo for combo in all_combos if sum(1 for num in combo if num in FILTER_NUMBERS) <= 1]
+                # 무작위 셔플
                 np.random.shuffle(filtered_combos)
+                # 요청 개수만큼 저장
                 st.session_state.filtered_selections = filtered_combos[:count_filtered]
                 st.success(f"✅ {len(st.session_state.filtered_selections)}개 유효 조합 생성")
 
@@ -108,16 +109,27 @@ if check_password():
                 st.session_state.filtered_selections,
                 columns=[f"번호{i+1}" for i in range(6)]
             )
-
-            # 페이지네이션
+            
+            # 페이지네이션 (10,000개씩)
             page_size = 10000
             total_pages = (len(df_filtered) - 1) // page_size + 1
             page = st.number_input("페이지 번호", 1, total_pages, 1, key="page_filtered")
-            st.dataframe(df_filtered.iloc[(page-1)*page_size : page*page_size], height=400)
-
+            
+            # 현재 페이지 데이터 추출
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            current_page_df = df_filtered.iloc[start_idx:end_idx]
+            
+            # 2자리 포맷팅
+            for col in current_page_df.columns:
+                current_page_df[col] = current_page_df[col].apply(lambda x: f"{x:02d}")
+            
+            st.dataframe(current_page_df, height=400)
+            
+            # 전체 데이터 다운로드
             csv_filtered = df_filtered.to_csv(index=False).encode('utf-8')
             st.download_button(
-                label="📥 필터 데이터 다운로드",
+                label="📥 필터 데이터 전체 다운로드",
                 data=csv_filtered,
                 file_name="filtered_lotto.csv",
                 mime="text/csv",
@@ -129,13 +141,11 @@ if check_password():
         st.info(f"🎲 총 조합 수 (중복 허용): **{total_combinations:,}개**")
         st.info(f"🎲 중복 없는 조합 수: **{unique_combinations:,}개**")
 
-        max_value_unfiltered = unique_combinations if unique_combinations else 1
-        value_unfiltered = min(10, max_value_unfiltered)
         count_unfiltered = st.number_input(
-            "생성할 조합 수 (일반)",
+            "생성할 조합 수 (일반)", 
             min_value=1,
-            max_value=max_value_unfiltered,
-            value=value_unfiltered,
+            max_value=unique_combinations if unique_combinations else 1,
+            value=min(10, unique_combinations) if unique_combinations else 1,
             key="count_unfiltered"
         )
 
@@ -143,8 +153,11 @@ if check_password():
             if unique_combinations == 0:
                 st.error("❗모든 칸에 숫자를 입력해주세요!")
             else:
+                # 모든 조합 생성
                 all_combos = [tuple(sorted(combo)) for combo in itertools.product(*inputs) if len(set(combo)) == 6]
+                # 무작위 셔플
                 np.random.shuffle(all_combos)
+                # 요청 개수만큼 저장
                 st.session_state.unfiltered_selections = all_combos[:count_unfiltered]
                 st.success(f"✅ {len(st.session_state.unfiltered_selections)}개 조합 생성")
 
@@ -153,16 +166,27 @@ if check_password():
                 st.session_state.unfiltered_selections,
                 columns=[f"번호{i+1}" for i in range(6)]
             )
-
-            # 페이지네이션
+            
+            # 페이지네이션 (10,000개씩)
             page_size = 10000
             total_pages = (len(df_unfiltered) - 1) // page_size + 1
             page = st.number_input("페이지 번호", 1, total_pages, 1, key="page_unfiltered")
-            st.dataframe(df_unfiltered.iloc[(page-1)*page_size : page*page_size], height=400)
-
+            
+            # 현재 페이지 데이터 추출
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            current_page_df = df_unfiltered.iloc[start_idx:end_idx]
+            
+            # 2자리 포맷팅
+            for col in current_page_df.columns:
+                current_page_df[col] = current_page_df[col].apply(lambda x: f"{x:02d}")
+            
+            st.dataframe(current_page_df, height=400)
+            
+            # 전체 데이터 다운로드
             csv_unfiltered = df_unfiltered.to_csv(index=False).encode('utf-8')
             st.download_button(
-                label="📥 일반 데이터 다운로드",
+                label="📥 일반 데이터 전체 다운로드",
                 data=csv_unfiltered,
                 file_name="unfiltered_lotto.csv",
                 mime="text/csv",
