@@ -3,6 +3,7 @@ import numpy as np
 from functools import reduce
 from operator import mul
 import pandas as pd
+import itertools
 
 # 필터링할 고정 숫자 집합 (52,55,61,67,73,79,91)
 FILTER_NUMBERS = {52, 55, 61, 67, 73, 79, 91}
@@ -25,6 +26,24 @@ def check_password():
                 st.error("❌ 잘못된 비밀번호입니다. 다시 시도해주세요.")
         return False
     return True
+
+def calc_unique_combinations(inputs):
+    """중복 없는 조합 수 계산 함수"""
+    if not all(len(col) > 0 for col in inputs):
+        return 0
+    
+    all_combos = itertools.product(*inputs)
+    unique_count = 0
+    
+    for combo in all_combos:
+        if len(set(combo)) == 6:
+            unique_count += 1
+    
+    return unique_count
+
+def calc_max_combinations(inputs):
+    """기존 곱셈 법칙 계산 함수"""
+    return reduce(mul, [len(col) for col in inputs if len(col) > 0], 1) if all(len(col) > 0 for col in inputs) else 0
 
 if check_password():
     # 반드시 세션 상태 변수 초기화!
@@ -51,24 +70,30 @@ if check_password():
                 numbers = []
             inputs.append(numbers)
 
-    max_combinations = reduce(mul, [len(col) for col in inputs if len(col) > 0], 1) if all(len(col) > 0 for col in inputs) else 0
-    
+    # 계산 실행
+    total_combinations = calc_max_combinations(inputs)
+    unique_combinations = calc_unique_combinations(inputs)
+
     # 탭 생성
     tab1, tab2 = st.tabs(["🔍 필터 적용 버전", "🎲 일반 버전"])
     
     # 필터 적용 탭
     with tab1:
+        st.info(f"🎲 총 조합 수 (중복 허용): **{total_combinations:,}개**")
+        st.info(f"🎲 중복 없는 조합 수: **{unique_combinations:,}개**")
         
+        max_value_filtered = min(10000, unique_combinations) if unique_combinations else 1
+        value_filtered = min(10, max_value_filtered)
         count_filtered = st.number_input(
             "생성할 조합 수 (필터)", 
             min_value=1, 
-            max_value=10000,
-            value=10,
+            max_value=max_value_filtered,
+            value=value_filtered,
             key="count_filtered"
         )
 
         if st.button("🎲 필터 적용 생성", key="btn_filtered", use_container_width=True):
-            if max_combinations == 0:
+            if unique_combinations == 0:
                 st.error("❗모든 칸에 숫자를 입력해주세요!")
             else:
                 valid_combos = []
@@ -79,7 +104,7 @@ if check_password():
                     combo = tuple(sorted([np.random.choice(col) for col in inputs]))
                     filter_count = sum(1 for num in combo if num in FILTER_NUMBERS)
                     
-                    if filter_count <= 1 and combo not in valid_combos:
+                    if filter_count <= 1 and combo not in valid_combos and len(set(combo)) == 6:
                         valid_combos.append(combo)
                     attempt += 1
                 
@@ -105,18 +130,21 @@ if check_password():
 
     # 일반 버전 탭
     with tab2:
-
+        st.info(f"🎲 총 조합 수 (중복 허용): **{total_combinations:,}개**")
+        st.info(f"🎲 중복 없는 조합 수: **{unique_combinations:,}개**")
         
+        max_value_unfiltered = min(10000, unique_combinations) if unique_combinations else 1
+        value_unfiltered = min(10, max_value_unfiltered)
         count_unfiltered = st.number_input(
             "생성할 조합 수 (일반)", 
             min_value=1, 
-            max_value=10000,
-            value=10,
+            max_value=max_value_unfiltered,
+            value=value_unfiltered,
             key="count_unfiltered"
         )
 
         if st.button("🎲 일반 생성", key="btn_unfiltered", use_container_width=True):
-            if max_combinations == 0:
+            if unique_combinations == 0:
                 st.error("❗모든 칸에 숫자를 입력해주세요!")
             else:
                 valid_combos = []
@@ -125,7 +153,7 @@ if check_password():
                 
                 while len(valid_combos) < count_unfiltered and attempt < max_attempts:
                     combo = tuple(sorted([np.random.choice(col) for col in inputs]))
-                    if combo not in valid_combos:
+                    if combo not in valid_combos and len(set(combo)) == 6:
                         valid_combos.append(combo)
                     attempt += 1
                 
