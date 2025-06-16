@@ -107,7 +107,7 @@ if check_password():
         if st.session_state.filtered_selections:
             df_filtered = pd.DataFrame(
                 st.session_state.filtered_selections,
-                columns=[f"번호{i+1}" for i in range(6)]
+                columns=[f"row{i+1}" for i in range(6)]
             )
             
             # 페이지네이션 (10,000개씩)
@@ -164,7 +164,7 @@ if check_password():
         if st.session_state.unfiltered_selections:
             df_unfiltered = pd.DataFrame(
                 st.session_state.unfiltered_selections,
-                columns=[f"번호{i+1}" for i in range(6)]
+                columns=[f"row {i+1}" for i in range(6)]
             )
             
             # 페이지네이션 (10,000개씩)
