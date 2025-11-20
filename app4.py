@@ -20,7 +20,7 @@ def check_password():
                 st.session_state.authenticated = True
                 st.session_state.filtered_selections = []
                 st.session_state.unfiltered_selections = []
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("❌ 잘못된 비밀번호입니다. 다시 시도해주세요.")
         return False
@@ -187,7 +187,7 @@ def main():
     # 로그아웃 버튼 (공통)
     if st.button("🚪 로그아웃", use_container_width=True, type="secondary"):
         st.session_state.authenticated = False
-        st.experimental_rerun()
+        st.rerun()
 
 
 if __name__ == "__main__":
