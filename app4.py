@@ -62,11 +62,11 @@ def main():
         with cols[i]:
             input_str = st.text_input(
                 f"{i+1}번째 숫자",
-                placeholder="쉼표로 구분 (예: 1,5,10)",
+                placeholder="띄어쓰기로 구분 (예: 1 5 10)",
                 key=f"col_{i}"
             )
             try:
-                numbers = sorted({int(n.strip()) for n in input_str.split(',') if n.strip()})
+                numbers = sorted({int(n.strip()) for n in input_str.split(' ') if n.strip()})
             except:
                 numbers = []
             inputs.append(numbers)

@@ -94,16 +94,16 @@ def main():
     if not check_password():
         return
 
-    st.title("로또 조합 생성기 (최대 2개 숫자/칸 허용)")
+    st.title("로또 조합 생성기 (수정)")
 
     cols = []
     for i in range(6):
-        cols.append(st.text_input(f"{i+1}번 칸 숫자 입력 (쉼표로 구분)", key=f"col{i}"))
+        cols.append(st.text_input(f"{i+1}번 칸 숫자 입력 (띄어쓰기로 구분)", key=f"col{i}"))
 
     inputs = []
     for col_str in cols:
         nums = set()
-        for x in col_str.split(","):
+        for x in col_str.split(" "):
             x = x.strip()
             if x.isdigit():
                 nums.add(int(x))
