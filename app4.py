@@ -11,17 +11,16 @@ FILTER_NUMBERS = {52, 55, 61, 67, 73, 79, 91}
 def check_password():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
-        
+
     if not st.session_state.authenticated:
         st.title("🔒 접근 권한")
         password = st.number_input("비밀번호를 입력하세요", format="%d")
-        
         if st.button("로그인", use_container_width=True):
             if password == 1234:
                 st.session_state.authenticated = True
                 st.session_state.filtered_selections = []
                 st.session_state.unfiltered_selections = []
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error("❌ 잘못된 비밀번호입니다. 다시 시도해주세요.")
         return False
@@ -31,36 +30,38 @@ def calc_unique_combinations(inputs):
     """중복 없는 조합 수 계산 함수"""
     if not all(len(col) > 0 for col in inputs):
         return 0
-    
     all_combos = itertools.product(*inputs)
     unique_count = 0
-    
     for combo in all_combos:
         if len(set(combo)) == 6:
             unique_count += 1
-    
     return unique_count
 
 def calc_max_combinations(inputs):
     """기존 곱셈 법칙 계산 함수"""
     return reduce(mul, [len(col) for col in inputs if len(col) > 0], 1) if all(len(col) > 0 for col in inputs) else 0
 
-if check_password():
+def main():
+    if not check_password():
+        return
+
     # 반드시 세션 상태 변수 초기화!
     if 'filtered_selections' not in st.session_state:
         st.session_state.filtered_selections = []
+
     if 'unfiltered_selections' not in st.session_state:
         st.session_state.unfiltered_selections = []
-    
+
     st.title("🎲 로또 조합 생성기")
 
     # 공통 입력 칸
     cols = st.columns(6)
     inputs = []
+
     for i in range(6):
         with cols[i]:
             input_str = st.text_input(
-                f"{i+1}번째 숫자", 
+                f"{i+1}번째 숫자",
                 placeholder="쉼표로 구분 (예: 1,5,10)",
                 key=f"col_{i}"
             )
@@ -83,7 +84,7 @@ if check_password():
         st.info(f"🎲 중복 없는 조합 수: **{unique_combinations:,}개**")
 
         count_filtered = st.number_input(
-            "생성할 조합 수 (필터)", 
+            "생성할 조합 수 (필터)",
             min_value=1,
             max_value=unique_combinations if unique_combinations else 1,
             value=min(10, unique_combinations) if unique_combinations else 1,
@@ -109,23 +110,18 @@ if check_password():
                 st.session_state.filtered_selections,
                 columns=[f"row{i+1}" for i in range(6)]
             )
-            
             # 페이지네이션 (10,000개씩)
             page_size = 10000
             total_pages = (len(df_filtered) - 1) // page_size + 1
             page = st.number_input("페이지 번호", 1, total_pages, 1, key="page_filtered")
-            
             # 현재 페이지 데이터 추출
             start_idx = (page - 1) * page_size
             end_idx = start_idx + page_size
             current_page_df = df_filtered.iloc[start_idx:end_idx]
-            
             # 2자리 포맷팅
             for col in current_page_df.columns:
                 current_page_df[col] = current_page_df[col].apply(lambda x: f"{x:02d}")
-            
             st.dataframe(current_page_df, height=400)
-            
             # 전체 데이터 다운로드
             csv_filtered = df_filtered.to_csv(index=False).encode('utf-8')
             st.download_button(
@@ -142,7 +138,7 @@ if check_password():
         st.info(f"🎲 중복 없는 조합 수: **{unique_combinations:,}개**")
 
         count_unfiltered = st.number_input(
-            "생성할 조합 수 (일반)", 
+            "생성할 조합 수 (일반)",
             min_value=1,
             max_value=unique_combinations if unique_combinations else 1,
             value=min(10, unique_combinations) if unique_combinations else 1,
@@ -166,23 +162,18 @@ if check_password():
                 st.session_state.unfiltered_selections,
                 columns=[f"row {i+1}" for i in range(6)]
             )
-            
             # 페이지네이션 (10,000개씩)
             page_size = 10000
             total_pages = (len(df_unfiltered) - 1) // page_size + 1
             page = st.number_input("페이지 번호", 1, total_pages, 1, key="page_unfiltered")
-            
             # 현재 페이지 데이터 추출
             start_idx = (page - 1) * page_size
             end_idx = start_idx + page_size
             current_page_df = df_unfiltered.iloc[start_idx:end_idx]
-            
             # 2자리 포맷팅
             for col in current_page_df.columns:
                 current_page_df[col] = current_page_df[col].apply(lambda x: f"{x:02d}")
-            
             st.dataframe(current_page_df, height=400)
-            
             # 전체 데이터 다운로드
             csv_unfiltered = df_unfiltered.to_csv(index=False).encode('utf-8')
             st.download_button(
@@ -196,4 +187,8 @@ if check_password():
     # 로그아웃 버튼 (공통)
     if st.button("🚪 로그아웃", use_container_width=True, type="secondary"):
         st.session_state.authenticated = False
-        st.rerun()
+        st.experimental_rerun()
+
+
+if __name__ == "__main__":
+    main()
