@@ -139,7 +139,7 @@ def main():
 
     if st.button("로그아웃"):
         st.session_state.authenticated = False
-        st.experimental_rerun()
+        st.rerun()
 
 if __name__ == "__main__":
     main()
