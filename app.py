@@ -18,7 +18,7 @@ def load_app3_py():
 
 def main():
     st.sidebar.title("로또 조합 생성기 탭 선택")
-    tab = st.sidebar.radio("탭 선택", ["원본 탭", "같은 열에 같은 숫자 탭", "한 조합에 최대 2개 숫자 탭"])
+    tab = st.sidebar.radio('앱 선택', ['app4.py', 'app2.py', 'app3.py', 'app5.py'], 0)
 
     if tab == "원본 탭":
         st.title("원본 app.py 코드 실행 탭")
